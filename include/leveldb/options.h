@@ -210,6 +210,7 @@ struct LEVELDB_EXPORT Options {
   bool update_in_place;
 
   const char* leaf_index_path;
+  size_t leaf_index_size;
 
   Options();
 };

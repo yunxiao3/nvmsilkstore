@@ -24,7 +24,8 @@
 #include <string>
 #include "leveldb/export.h"
 #include "leveldb/status.h"
-
+#include "kvdk/engine.hpp"
+#include "kvdk/namespace.hpp"
 
 #include "db/nvmemtable.h"
 

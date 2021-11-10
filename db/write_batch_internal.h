@@ -45,6 +45,7 @@ class WriteBatchInternal {
 
   static Status InsertInto(const WriteBatch* batch, MemTable* memtable);
   static Status InsertInto(const WriteBatch* batch, NvmemTable* memtable);
+  static Status InsertInto(const WriteBatch* batch, kvdk::Engine* kv);
 
 
   static void Append(WriteBatch* dst, const WriteBatch* src);

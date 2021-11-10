@@ -150,6 +150,27 @@ class NvmemTableInserter : public WriteBatch::Handler {
   }
 };
 
+
+
+
+class PmemkvInserter : public WriteBatch::Handler {
+ public:
+  SequenceNumber sequence_;
+  kvdk::Engine* kv_;
+
+  virtual void Put(const Slice& key, const Slice& value) {
+   // printf("PmemkvInserter: Put set a default prefix leafindex \n");
+   // std::cout<< key.ToString()<< "value: "<<  value.ToString() <<  " \n";
+    kv_->SSet("leafindex",key.ToString(), value.ToString());
+    sequence_++;
+  }
+  virtual void Delete(const Slice& key) {
+    //printf("PmemkvInserter: Delete \n");    
+    kv_->SDelete("leafindex",key.ToString());
+    sequence_++;
+  }
+};
+
 }  // namespace
 
 Status WriteBatchInternal::InsertInto(const WriteBatch* b,
@@ -169,6 +190,15 @@ Status WriteBatchInternal::InsertInto(const WriteBatch* b,
   return b->Iterate(&inserter);
 }
 
+
+
+Status WriteBatchInternal::InsertInto(const WriteBatch* b,
+                                      kvdk::Engine* kv) {
+  PmemkvInserter inserter;
+  inserter.sequence_ = WriteBatchInternal::Sequence(b);
+  inserter.kv_ = kv;
+  return b->Iterate(&inserter);
+}
 void WriteBatchInternal::SetContents(WriteBatch* b, const Slice& contents) {
   assert(contents.size() >= kHeader);
   b->rep_.assign(contents.data(), contents.size());

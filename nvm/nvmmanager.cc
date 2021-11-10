@@ -14,6 +14,11 @@ void NvmManager::init(){
     size_t mapped_len = cap_;
     data_ = (char *) pmem_map_file(nvm_file_, cap_, PMEM_FILE_CREATE, 
             0666, &mapped_len, &is_pmem);
+    if(!is_pmem){
+       printf("%s is not pmem path\n", nvm_file_ ); 
+       //perror ("pmem_map_file");
+       exit(-1);
+    }
     if (data_ == NULL) {
        perror ("pmem_map_file");
        exit(1);
