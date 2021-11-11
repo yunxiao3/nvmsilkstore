@@ -10,8 +10,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 
-# This project requires C++11.
-set(CMAKE_CXX_STANDARD 11)
+# This project requires C++17, because the dependent kvdk lib requires C++17
+
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -30,6 +31,7 @@ check_library_exists(crc32c crc32c_value "" HAVE_CRC32C)
 check_library_exists(snappy snappy_compress "" HAVE_SNAPPY)
 check_library_exists(tcmalloc malloc "" HAVE_TCMALLOC)
 check_library_exists(pmem pmem_map_file "" HAVE_PEME)
+check_library_exists(engine Open "" HAVE_KVDK)
 
 
 include(CheckCXXSymbolExists)
@@ -191,6 +193,11 @@ target_sources(leveldb
     "${PROJECT_SOURCE_DIR}/nvm/nvmmanager.cc"
 
 
+    "${PROJECT_SOURCE_DIR}/nvm/nvm_leaf_index.h"
+    "${PROJECT_SOURCE_DIR}/nvm/nvm_leaf_index.cc"
+
+    
+
 
 
 
@@ -278,6 +285,11 @@ if(HAVE_PMEM)
 endif(HAVE_PMEM)
 
 
+
+if(HAVE_KVDK)
+  target_link_libraries(leveldb -lengine)
+endif(HAVE_KVDK)
+
 # Needed by port_stdcxx.h
 find_package(Threads REQUIRED)
 target_link_libraries(leveldb Threads::Threads)
@@ -323,7 +335,9 @@ if(LEVELDB_BUILD_TESTS)
   leveldb_test("${PROJECT_SOURCE_DIR}/test/silk_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/recovery_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/seqwrite_test.cc")  
-  leveldb_test("${PROJECT_SOURCE_DIR}/test/seq_rand_add-get_test.cc")
+  leveldb_test("${PROJECT_SOURCE_DIR}/test/nvm_leaf_index_test.cc")
+
+  #leveldb_test("${PROJECT_SOURCE_DIR}/test/seq_rand_add-get_test.cc")
 
 
   # leveldb_test("${PROJECT_SOURCE_DIR}/db/c_test.c")
@@ -354,7 +368,7 @@ if(LEVELDB_BUILD_TESTS)
    # leveldb_test("${PROJECT_SOURCE_DIR}/db/version_edit_test.cc")
    # leveldb_test("${PROJECT_SOURCE_DIR}/db/version_set_test.cc")
    # leveldb_test("${PROJECT_SOURCE_DIR}/db/write_batch_test.cc")
-    target_link_libraries(leveldb -lpmem)
+    target_link_libraries(leveldb -lpmem -lengine)
 
    leveldb_test("${PROJECT_SOURCE_DIR}/db/nvmemtabletest.cc")
 

@@ -8,6 +8,11 @@
 #include "db/dbformat.h"
 #include "leveldb/write_batch.h"
 
+
+
+#include "kvdk/engine.hpp"
+#include "kvdk/namespace.hpp"
+
 namespace leveldb {
 
 class MemTable;
@@ -45,7 +50,7 @@ class WriteBatchInternal {
 
   static Status InsertInto(const WriteBatch* batch, MemTable* memtable);
   static Status InsertInto(const WriteBatch* batch, NvmemTable* memtable);
-
+  static Status InsertInto(const WriteBatch* batch, kvdk::Engine* kv);
 
   static void Append(WriteBatch* dst, const WriteBatch* src);
  //  static void Append(NvmWriteBatch* dst, const NvmWriteBatch* src);

@@ -5,46 +5,25 @@
 #include <map>
 #include <cstdint>
 #include <cstdio>
+#include "db/write_batch_internal.h"
+#include"leveldb/write_batch.h"
 #include "leveldb/db.h"
 #include "leveldb/iterator.h"
 #include "leveldb/options.h"
-#include "index/nvmmanager.h"
+#include "nvm/nvmmanager.h"
+
+#include "port/port.h"
+#include "port/thread_annotations.h"
+
+
+
+
+#include "kvdk/engine.hpp"
+#include "kvdk/namespace.hpp"
 
 namespace leveldb {
 
 namespace silkstore {
-
-struct ListNode {
-	ListNode* prev;
-	ListNode* next;
-	void * payload;
-	ListNode(): prev(nullptr), next(nullptr), payload(nullptr) {}
-};
-
-class NVMLinkedList {
-public:
-	NVMLinkedList(NVMAllocator* alloc) : alloc(alloc) {
-		head = static_cast<ListNode*>(alloc->allocate(sizeof(ListNode)));
-    head->prev = head->next = nullptr;
-    clwbmore(head, ((char*)head) + sizeof(ListNode));
-    sfence();
-	}
-	ListNode* AddPayLoad(void * payload) {
-    ListNode* node = static_cast<ListNode*>(alloc->allocate(sizeof(ListNode)));
-    node->payload = payload;
-    node->next = head;
-    node->prev = head->prev;
-    head->prev->next = node;
-    head->prev = node;
-    clwbmore(head, ((char*)head) + sizeof(ListNode));
-    sfence();
-    clwbmore(node, ((char*)node) + sizeof(ListNode));
-    sfence();
-    return node;
-	}
-	ListNode* head;
-  NVMAllocator* alloc;
-};
 
 // A NVMLeafIndex is a persistent ordered map from keys to values.
 // A NVMLeafIndex is safe for concurrent access from multiple threads without
@@ -56,10 +35,10 @@ public:
   // OK on success.
   // Stores nullptr in *dbptr and returns a non-OK status on error.
   // Caller should delete *dbptr when it is no longer needed.
-  static Status Open(const Options& options,
+  static Status OpenLeafIndex(const Options& options,
                      const std::string& name,
                      DB** dbptr);
-
+  NVMLeafIndex(const Options& options, const std::string& dbname);
   NVMLeafIndex() = default;
 
   NVMLeafIndex(const NVMLeafIndex&) = delete;
@@ -91,7 +70,6 @@ public:
   //
   // If there is no entry for "key" leave *value unchanged and return
   // a status for which Status::IsNotFound() returns true.
-  //
   // May return some other Status on an error.
   virtual Status Get(const ReadOptions& options,
                      const Slice& key, std::string* value) override;
@@ -155,9 +133,11 @@ public:
   virtual void CompactRange(const Slice* begin, const Slice* end) override;
 private:
 
-	std::map<std::string, void*> dram_index;
-  NVMAllocator alloc;
-	NVMLinkedList nvm_list;
+
+  kvdk::Engine* kv;
+  //kvdk::Engine *engine;
+  port::Mutex mutex_;
+  
 };
 
 							   

@@ -205,7 +205,7 @@ struct LEVELDB_EXPORT Options {
   const char* nvm_file;
   // nvm map size 
   size_t nvm_size;
-
+  size_t leaf_index_size;
   size_t max_imm_num;
   bool update_in_place;
 

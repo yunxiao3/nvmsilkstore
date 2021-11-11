@@ -6,6 +6,8 @@ namespace silkstore{
 
 // init nvm memory 
 void NvmManager::init(){
+
+    std::cout << "init nvm pool path: "<< nvm_file_ << std::endl;
     std::cout << "init nvm pool size: "<< cap_  / (1024 *1024) << "MB" << std::endl;
     //memory aliganment must be 4096
     assert((cap_>0)&&(cap_ % 4096 == 0));
@@ -14,6 +16,14 @@ void NvmManager::init(){
     size_t mapped_len = cap_;
     data_ = (char *) pmem_map_file(nvm_file_, cap_, PMEM_FILE_CREATE, 
             0666, &mapped_len, &is_pmem);
+
+    if(!is_pmem){
+        perror ("is not pmem path");
+
+       printf("%s is not pmem path\n", nvm_file_ ); 
+       //perror ("pmem_map_file");
+       exit(-1);
+    }
     if (data_ == NULL) {
        perror ("pmem_map_file");
        exit(1);
