@@ -15,6 +15,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "-std=c++17 -g -ggdb")
 
 option(LEVELDB_BUILD_TESTS "Build LevelDB's unit tests" ON)
 option(LEVELDB_BUILD_BENCHMARKS "Build LevelDB's benchmarks" ON)
@@ -197,6 +198,10 @@ target_sources(leveldb
     "${PROJECT_SOURCE_DIR}/nvm/nvm_leaf_index.cc"
 
     
+    "${PROJECT_SOURCE_DIR}/nvm/pmemkv_leaf_index.h"
+    "${PROJECT_SOURCE_DIR}/nvm/pmemkv_leaf_index.cc"
+
+    
 
 
 
@@ -331,11 +336,13 @@ if(LEVELDB_BUILD_TESTS)
 
     add_test(NAME "${test_target_name}" COMMAND "${test_target_name}")
   endfunction(leveldb_test)
-  
+
+  leveldb_test("${PROJECT_SOURCE_DIR}/test/kvdk_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/silk_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/recovery_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/seqwrite_test.cc")  
-  leveldb_test("${PROJECT_SOURCE_DIR}/test/nvm_leaf_index_test.cc")
+  leveldb_test("${PROJECT_SOURCE_DIR}/nvm/nvm_leaf_index_test.cc")
+  leveldb_test("${PROJECT_SOURCE_DIR}/nvm/pmemkv_leaf_index_test.cc")
 
   #leveldb_test("${PROJECT_SOURCE_DIR}/test/seq_rand_add-get_test.cc")
 
@@ -368,7 +375,7 @@ if(LEVELDB_BUILD_TESTS)
    # leveldb_test("${PROJECT_SOURCE_DIR}/db/version_edit_test.cc")
    # leveldb_test("${PROJECT_SOURCE_DIR}/db/version_set_test.cc")
    # leveldb_test("${PROJECT_SOURCE_DIR}/db/write_batch_test.cc")
-    target_link_libraries(leveldb -lpmem -lengine)
+  target_link_libraries(leveldb -lpmem -lengine -lpmemkv)
 
    leveldb_test("${PROJECT_SOURCE_DIR}/db/nvmemtabletest.cc")
 

@@ -28,9 +28,8 @@ class NVMLeafIndexIterator: public Iterator {
 	 iter_->Prev();
   }
   
-  virtual Slice key() const {
-	std::cout<< "key: " <<  iter_->Key() << " \n";
-	return Slice(iter_->Key() );
+  virtual Slice key() const { 
+	return iter_->Key();
   }
   virtual Slice value() const {
     return iter_->Value();
@@ -46,67 +45,17 @@ class NVMLeafIndexIterator: public Iterator {
   void operator=(const NVMLeafIndexIterator&);
 };
 
- Iterator* NVMLeafIndex::NewIterator(const ReadOptions& options){
-  //std::__throw_runtime_error(" NVMLeafIndex::NewIterator(const ReadOptions& options) not support\n");
+Iterator* NVMLeafIndex::NewIterator(const ReadOptions& options){
   auto it =  kv->NewSortedIterator("leafindex");
   if (it == nullptr){
 	  return NewEmptyIterator();
   }
   return new NVMLeafIndexIterator(it);
-} 
-
-
-
-
-
-class EmptyKVIterator:public kvdk::Iterator {
-public:
-  virtual void Seek(const std::string &key) {};
-
-  virtual void SeekToFirst(){};
-
-  virtual void SeekToLast(){};
-
-  virtual bool Valid(){return false;};
-
-  virtual void Next() {};
-
-  virtual void Prev(){};
-
-  virtual std::string Key(){return nullptr;};
-
-  virtual std::string Value(){return nullptr;};
-};
-
-
-std::shared_ptr<kvdk::Iterator> NVMLeafIndex::NewIterator(){
-	//sleep(1);
-  std::cout<<" new it kvadd  " << kv << "  \n" ;
-	//
-  auto it =  kv->NewSortedIterator("leafindex");
-  if (it == nullptr){
-	  std::cout << "########## return EmptyKVIterator() ####### \n";
-	   return  std::shared_ptr<kvdk::Iterator>(new EmptyKVIterator());
-  }
-	
-  it->SeekToFirst();
-
-  return it;
 }
 
+
 NVMLeafIndex::NVMLeafIndex(const Options& options, const std::string& dbname){
-	kvdk::Configs cfg;
-	cfg.pmem_segment_blocks = ( 1024UL* 1024UL * 4 );
-	cfg.hash_bucket_num = (1ull << 15);
-
-	cfg.pmem_file_size = 1280UL * 1024UL * 1024UL * 32;
-	std::string engine_path = "/mnt/NVMSilkstore/leafindex";
-
-	printf("###### Need to set pmem_segment_blocks  hash_bucket_num  pmem_file_size #####\n");	
-
-	kvdk::Engine::Open(engine_path, &kv, cfg, stdout);
-	printf("############# Successfully opened a KVDK instance. ##############\n"); 
-  	/* kvdk::Configs cfg;
+  	kvdk::Configs cfg;
     cfg.pmem_segment_blocks = (1ull << 8);
     cfg.hash_bucket_num = (1ull << 15);
 	printf("###### Need to set pmem_segment_blocks  hash_bucket_num #####\n");	
@@ -126,12 +75,12 @@ NVMLeafIndex::NVMLeafIndex(const Options& options, const std::string& dbname){
 		//s = cfg.put_size(options.leaf_index_size);
 	}
 	kvdk::Engine::Open(engine_path, &kv, cfg, stdout);
-	printf("############# Successfully opened a KVDK instance. ##############\n");  */
+	printf("############# Successfully opened a KVDK instance. ##############\n"); 
 }
 
 Status NVMLeafIndex::OpenLeafIndex(const Options& options,
                      const std::string& name,
-                     NVMLeafIndex** dbptr){
+                     DB** dbptr){
 	*dbptr = new NVMLeafIndex(options, name);
 	return Status::OK();
 }
@@ -160,7 +109,7 @@ Status NVMLeafIndex::Write(const WriteOptions& options, WriteBatch* my_batch) {
 	return status;
 }
 
-/* Status NVMLeafIndex::Put(const WriteOptions& options,
+Status NVMLeafIndex::Put(const WriteOptions& options,
 		   				 const Slice& key,
 		   				 const Slice& value) {
 	kvdk::Status s;
@@ -172,26 +121,7 @@ Status NVMLeafIndex::Write(const WriteOptions& options, WriteBatch* my_batch) {
 	}
 	return Status::Corruption("");				 
 }
- */
 
-
-Status NVMLeafIndex::Put(const WriteOptions& options,  
-						 const Slice& key,
-		   				 const Slice& value) {
-
-	kvdk::Status s;
-	mutex_.Lock();				 										
-	s = kv->SSet("leafindex",key.ToString(), value.ToString());
-	mutex_.Unlock();				 	
-	if (s == kvdk::Status::Ok){
-		return Status::OK();
-	}else{
-		std::cout<< "NVMLeafIndex::Put ERR Code: "<< (int)s <<" \n";
-		std::__throw_runtime_error(" NVMLeafIndex::Put ERR \n");
-		return Status::Corruption("");	
-	}
-	return Status::Corruption("");	
-}
 
 Status NVMLeafIndex::Delete(const WriteOptions& options, const Slice& key) {
 	kvdk::Status s;

@@ -1,5 +1,5 @@
-#ifndef STORAGE_LEVELDB_INCLUDE_NVM_LEAF_INDEX_H_
-#define STORAGE_LEVELDB_INCLUDE_NVM_LEAF_INDEX_H_
+#ifndef STORAGE_LEVELDB_INCLUDE_PMEMKV_LEAF_INDEX_H_
+#define STORAGE_LEVELDB_INCLUDE_PMEMKV_LEAF_INDEX_H_
 
 #include <string>
 #include <map>
@@ -25,7 +25,7 @@ namespace silkstore {
 // A NVMLeafIndex is a persistent ordered map from keys to values.
 // A NVMLeafIndex is safe for concurrent access from multiple threads without
 // any external synchronization.
-class NVMLeafIndex: public DB {
+class PmemKVLeafIndex: public DB {
 public:
   // Open the database with the specified "name".
   // Stores a pointer to a heap-allocated database in *dbptr and returns
@@ -34,14 +34,14 @@ public:
   // Caller should delete *dbptr when it is no longer needed.
   static Status OpenLeafIndex(const Options& options,
                      const std::string& name,
-                     DB** dbptr);
-  NVMLeafIndex(const Options& options, const std::string& dbname);
-  NVMLeafIndex() = default;
+                     PmemKVLeafIndex** dbptr);
+  PmemKVLeafIndex(const Options& options, const std::string& dbname);
+  PmemKVLeafIndex() = default;
 
-  NVMLeafIndex(const NVMLeafIndex&) = delete;
-  NVMLeafIndex& operator=(const NVMLeafIndex&) = delete;
+  PmemKVLeafIndex(const PmemKVLeafIndex&) = delete;
+  PmemKVLeafIndex& operator=(const PmemKVLeafIndex&) = delete;
 
-  virtual ~NVMLeafIndex() override;
+  virtual ~PmemKVLeafIndex() override;
 
   // Set the database entry for "key" to "value".  Returns OK on success,
   // and a non-OK status on error.
@@ -130,8 +130,8 @@ public:
   virtual void CompactRange(const Slice* begin, const Slice* end) override;
 private:
 
-
-  pmem::kv::db::read_iterator kv;
+  pmem::kv::db *kv;
+  //pmem::kv::db::read_iterator kv;
   //kvdk::Engine *engine;
   port::Mutex mutex_;
   
