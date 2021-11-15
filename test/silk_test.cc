@@ -181,7 +181,7 @@ void RandomWrite(){
           m[key] = value;
           
           for (int j = 0; j < 3; ++j) {
-              int idx = rand() % kNumKVs;
+              int idx = std::min(rand(),i) % kNumKVs;
               string res = "";
               auto s = db_->Get(ReadOptions(), keys[idx], &res);
               countNum++;

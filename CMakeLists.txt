@@ -12,7 +12,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 # This project requires C++17, because the dependent kvdk lib requires C++17
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "-std=c++17 -g -ggdb")
@@ -337,6 +337,8 @@ if(LEVELDB_BUILD_TESTS)
     add_test(NAME "${test_target_name}" COMMAND "${test_target_name}")
   endfunction(leveldb_test)
 
+
+  leveldb_test("${PROJECT_SOURCE_DIR}/test/leveldb_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/kvdk_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/silk_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/test/recovery_test.cc")

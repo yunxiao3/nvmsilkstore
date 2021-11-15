@@ -15,7 +15,7 @@
 #include "silkstore/silkstore_iter.h"
 #include "silkstore/util.h"
 #include "silkstore/segment.h"
-
+#include <iostream>
 extern int runs_searched;
 namespace leveldb {
 namespace silkstore {
@@ -367,12 +367,18 @@ Iterator *LeafStore::NewIterator(const ReadOptions &options) {
 }
 
 Status LeafStore::Get(const ReadOptions &options, const LookupKey &key, std::string *value, LeafStatStore &stat_store) {
+  
     Iterator *it = leaf_index_->NewIterator(options);
     DeferCode c([it]() { delete it; });
     it->Seek(key.user_key());
     if (it->Valid() == false)
         return Status::NotFound("");
+    //std::cout << "search key: " << key.user_key().ToString() <<"\n";
+
     Slice index_data = it->value();
+
+    //std::cout<<"key: "<< it->key().ToString()  << " index_data's size: " 
+    //            << index_data.size() << "\n";
     Status s;
     Status key_status = Status::NotFound("");
     LeafIndexEntry index_entry(index_data);

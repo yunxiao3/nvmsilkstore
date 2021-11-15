@@ -19,6 +19,7 @@
 #include "silkstore/silkstore_iter.h"
 #include "silkstore/util.h"
 #include "util/histogram.h"
+#include"nvm/pmemkv_leaf_index.h"
 #include <cmath>
 int runs_searched = 0;
 namespace leveldb {
@@ -145,16 +146,18 @@ SilkStore::~SilkStore() {
 }
 
 Status SilkStore::OpenIndex(const Options &index_options) {
-    assert(leaf_index_ == nullptr);
+   assert(leaf_index_ == nullptr);
     Status s;
-    if (index_options.leaf_index_path == nullptr){
+    s = leveldb::silkstore::PmemKVLeafIndex::OpenLeafIndex(
+            index_options,  dbname_ + "/leaf_index", &leaf_index_);
+    /* if (index_options.leaf_index_path == nullptr){
         s = DB::Open(index_options,  dbname_ + "/leaf_index", &leaf_index_);
         std::cout << "Open index: "<< dbname_ + "/leaf_index\n";
     }else{
         s = DB::Open(index_options, 
                 std::string(index_options.leaf_index_path) + "/leaf_index", &leaf_index_);
         std::cout << "Open index: "<< std::string(index_options.leaf_index_path) + "/leaf_index\n";        
-    }
+    } */
     return s;
 }
 
@@ -955,6 +958,7 @@ Status SilkStore::Get(const ReadOptions &options,
             }            
         }
         if (!find) {
+           // std::cout<< "Get From Leaf_store: \n";
             s = leaf_store_->Get(options, lkey, value, stat_store_);
         }
         mutex_.Lock();
@@ -1429,8 +1433,8 @@ Status SilkStore::OptimizeLeaf() {
     };
     MutexLock g(&GCMutex);
 
-    auto leaf_index_snapshot = leaf_index_->GetSnapshot();
-    DeferCode c([this, &leaf_index_snapshot]() { leaf_index_->ReleaseSnapshot(leaf_index_snapshot); });
+    auto leaf_index_snapshot = nullptr; //leaf_index_->GetSnapshot();
+    //DeferCode c([this, &leaf_index_snapshot]() { leaf_index_->ReleaseSnapshot(leaf_index_snapshot); });
 
     // Maintain a min-heap of kOptimizationK elements based on read-hotness
     std::priority_queue<HeapItem> candidate_heap;
@@ -1528,12 +1532,12 @@ Status SilkStore::MakeRoomInLeafLayer(bool force) {
     restart:
     {
         ReadOptions ro;
-        ro.snapshot = leaf_index_->GetSnapshot();
+        //ro.snapshot = leaf_index_->GetSnapshot();
         // Release snapshot after the traversal is done
-        DeferCode c([&ro, this]() {
+  /*       DeferCode c([&ro, this]() {
             leaf_index_->ReleaseSnapshot(ro.snapshot);
             mutex_.Lock();
-        });
+        }); */
         std::unique_ptr<Iterator> iit(leaf_index_->NewIterator(ro));
         iit->SeekToFirst();
         GroupedSegmentAppender grouped_segment_appender(1, segment_manager_, options_);
@@ -1729,16 +1733,17 @@ Status SilkStore::MakeRoomInLeafLayer(bool force) {
 static int num_compactions = 0;
 
 Status SilkStore::DoCompactionWork(WriteBatch &leaf_index_wb, NvmemTable* imm) {
+
+   // std::cout<< "DoCompactionWork \n" ;
     mutex_.Unlock();
-    
     ReadOptions ro;
-    ro.snapshot = leaf_index_->GetSnapshot();
+  /*   ro.snapshot = leaf_index_->GetSnapshot();
 
     // Release snapshot after the traversal is done
     DeferCode c([&ro, this]() {
         leaf_index_->ReleaseSnapshot(ro.snapshot);
         mutex_.Lock();
-    });
+    }); */
 
     std::unique_ptr<Iterator> iit(leaf_index_->NewIterator(ro));
     int self_compaction = 0;

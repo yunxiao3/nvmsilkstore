@@ -9,6 +9,7 @@
 #include "leveldb/write_batch.h"
 
 
+#include <libpmemkv.hpp>
 
 #include "kvdk/engine.hpp"
 #include "kvdk/namespace.hpp"
@@ -51,6 +52,9 @@ class WriteBatchInternal {
   static Status InsertInto(const WriteBatch* batch, MemTable* memtable);
   static Status InsertInto(const WriteBatch* batch, NvmemTable* memtable);
   static Status InsertInto(const WriteBatch* batch, kvdk::Engine* kv);
+  static Status InsertInto(const WriteBatch* batch, pmem::kv::db* kv);
+
+  
 
   static void Append(WriteBatch* dst, const WriteBatch* src);
  //  static void Append(NvmWriteBatch* dst, const NvmWriteBatch* src);

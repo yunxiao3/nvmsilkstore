@@ -156,20 +156,59 @@ class NvmemTableInserter : public WriteBatch::Handler {
 class PmemkvInserter : public WriteBatch::Handler {
  public:
   SequenceNumber sequence_;
+  pmem::kv::db* kv_;
+
+  virtual void Put(const Slice& key, const Slice& value) {
+   // printf("PmemkvInserter: Put set a default prefix leafindex \n");
+   // std::cout<<"PmemkvInserter: "<<  key.ToString()<< " value.ToString size: "<<  value.ToString().size() <<  " \n";
+    pmem::kv::status s = kv_->put(key.ToString(), value.ToString());
+   /*  std::cout<<"put status:"<<  s << " \n";
+
+    std::string res;
+    s = kv_->get(key.ToString(),&res);
+
+   std::cout<<"Get value  size:"<<  res.size()<< " \n";
+ */
+    
+    if (s != pmem::kv::status::OK){
+      std::__throw_runtime_error("PmemkvInserter ERR\n");
+    }
+    sequence_++;
+  }
+  virtual void Delete(const Slice& key) {
+  //  std::cout<<"PmemkvDelete: "<<  key.ToString() <<  " \n";
+    //printf("PmemkvInserter: Delete \n");    
+    pmem::kv::status s = kv_->remove(key.ToString());
+    if (s != pmem::kv::status::OK){
+      std::__throw_runtime_error("PmemkvDelete  ERR\n");
+    }
+    sequence_++;
+  }
+};
+
+
+
+
+class KVDKInserter : public WriteBatch::Handler {
+ public:
+  SequenceNumber sequence_;
   kvdk::Engine* kv_;
 
   virtual void Put(const Slice& key, const Slice& value) {
    // printf("PmemkvInserter: Put set a default prefix leafindex \n");
-   // std::cout<< key.ToString()<< "value: "<<  value.ToString() <<  " \n";
+   std::cout<<"KVDKInserter: "<<  key.ToString()<< " value.ToString size: "<<  value.ToString().size() <<  " \n";
     kv_->SSet("leafindex",key.ToString(), value.ToString());
     sequence_++;
   }
   virtual void Delete(const Slice& key) {
-    //printf("PmemkvInserter: Delete \n");    
+    //printf("PmemkvInserter: Delete \n"); 
+    std::cout<<"KVDKDelete: "<<  key.ToString() <<  " \n";
     kv_->SDelete("leafindex",key.ToString());
     sequence_++;
   }
 };
+
+
 
 }  // namespace
 
@@ -193,12 +232,24 @@ Status WriteBatchInternal::InsertInto(const WriteBatch* b,
 
 
 Status WriteBatchInternal::InsertInto(const WriteBatch* b,
-                                      kvdk::Engine* kv) {
+                                      pmem::kv::db* kv) {
   PmemkvInserter inserter;
   inserter.sequence_ = WriteBatchInternal::Sequence(b);
   inserter.kv_ = kv;
   return b->Iterate(&inserter);
 }
+
+
+
+Status WriteBatchInternal::InsertInto(const WriteBatch* b,
+                                      kvdk::Engine* kv) {
+  KVDKInserter inserter;
+  inserter.sequence_ = WriteBatchInternal::Sequence(b);
+  inserter.kv_ = kv;
+  return b->Iterate(&inserter);
+}
+
+
 void WriteBatchInternal::SetContents(WriteBatch* b, const Slice& contents) {
   assert(contents.size() >= kHeader);
   b->rep_.assign(contents.data(), contents.size());

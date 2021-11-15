@@ -53,16 +53,114 @@ std::string RandomString(Random* rnd, int len) {
 
 
 
-void InsertAndGet(){
+static const int kNumOps = 30;
+static const long int kNumKVs = 50;
+static const int kValueSize = 1024ul*1024ul;
 
-    leveldb::silkstore::PmemKVLeafIndex* db_ = nullptr;
+Random rnd(0);
+std::vector<std::string> keys(kNumKVs);
+
+//sort(keys.begin(), keys.end());
+std::map<std::string, std::string> m;
+
+
+clock_t startTime,endTime;
+
+
+
+void InsertAndGet(leveldb::DB* db_ ){
+
+
+    std::cout << " ######### InsertAndGet Test ######## \n";
+  
+    startTime = clock();
+    leveldb::WriteBatch batch;
+    for (int i = 0; i < kNumOps; i++) {
+        std::string key = keys[i % kNumKVs];
+        std::string value = RandomString(&rnd, kValueSize);
+        batch.Clear();
+        batch.Put(key, value);
+        db_->Write(leveldb::WriteOptions(), &batch);
+        // std::cout<< "insert: " << key << " " << value << "\n";
+        m[key] = value;          
+        std::string res;
+        leveldb::Status s = db_->Get(leveldb::ReadOptions(), key, &res);
+        // std::cout<< "get: " << key << " " << res << "\n";                
+        if (res != value){
+            fprintf(stderr, "Key %s has wrong value %s \n",key.c_str(), res.c_str() );
+            return ;
+        } 
+    }
+    endTime = clock();
+    std::cout << "The Insert time is: " <<(endTime - startTime) << "\n";
+    std::cout << " @@@@@@@@@ PASS #########\n";
+    
+}
+
+
+
+void Get(leveldb::DB* db_ ){
+
+
+  std::cout << " ######### Begin Get Test ######## \n";
+    startTime = clock();
+    for (int i = 0; i < kNumOps; i++) {
+            std::string key = keys[i % kNumKVs];
+            std::string res;
+            db_->Get(leveldb::ReadOptions(), key, &res);
+            auto ans = m[key];
+            if (res != ans){
+                fprintf(stderr, "Key %s has wrong value %s \n",key.c_str(), res.c_str() );
+                return ;
+            }
+    }
+    endTime = clock();
+    std::cout << "The Get time is: " <<(endTime - startTime) << "\n";
+    std::cout << " @@@@@@@@@ PASS #########\n";
+}
+
+
+void Iter(leveldb::DB* db_ ){
+   std::cout << " ######### Begin Sequential Iterator Test ######## \n";
+    startTime = clock();        
+    auto it = db_->NewIterator(leveldb::ReadOptions());
+    it->SeekToFirst();
+    auto mit = m.begin();
+    int count = 0;
+    while (mit != m.end() && it->Valid()) {
+        auto res_key = it->key();
+        auto res_value = it->value();
+        auto ans_key = mit->first;
+        auto ans_value = mit->second;
+    //    std::cout << res_key.ToString() << " " << ans_key << "\n"; 
+    //    std::cout << res_value.ToString() << " " << ans_value << "\n";        
+                
+        assert(res_key == ans_key);
+        assert(res_value == ans_value);
+        it->Next();
+        ++mit;
+        count++;
+    }
+    
+    endTime = clock();
+    std::cout << "The Iterator time is: " <<(endTime - startTime) << "\n";
+
+    
+}
+
+
+
+
+void SeekTest(){
+
+    leveldb::DB* db_ = nullptr;
     // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
     leveldb::Status s = leveldb::silkstore::PmemKVLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
     assert(s.ok()==true);
     std::cout << " ######### InsertAndGet Test ######## \n";
     static const int kNumOps = 30;
     static const long int kNumKVs = 50;
-    static const int kValueSize = 128*1024ul*1024ul;
+    static const int kValueSize = 1024ul*1024ul;
 
     Random rnd(0);
     std::vector<std::string> keys(kNumKVs);
@@ -78,8 +176,8 @@ void InsertAndGet(){
 
     startTime = clock();
 
-    for (int i = 0; i < kNumOps; i++) {
-        std::string key = keys[i % kNumKVs];
+    for (int i = 0; i < kNumOps; i+=2) {
+        std::string key = std::to_string(i);
         std::string value = RandomString(&rnd, kValueSize);
         db_->Put(leveldb::WriteOptions(),key, value);
         // std::cout<< "insert: " << key << " " << value << "\n";
@@ -143,8 +241,108 @@ void InsertAndGet(){
 
 
 
+void EmptyIter(leveldb::DB* db_){
+      std::cout << " ######### EmptyIter Test ######## \n";
+    auto its = db_->NewIterator(leveldb::ReadOptions());
+    its->SeekToFirst();
+    while (its->Valid()) {
+      std::cout<< "key: "<<  its->key().ToString() <<  "value size:" <<  its->value().size() <<"\n";
+        its->Next();
+    }
+    std::cout << " ######### PASS ######## \n";
+    
+}
+
+
+
+
+
+void Bench(){
+        leveldb::DB* db_ = nullptr;
+        leveldb::Options options;
+        options.create_if_missing = true;
+
+       // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
+        leveldb::Status s = leveldb::silkstore::PmemKVLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
+        assert(s.ok()==true);
+        std::cout << " ######### Bench Test ######## \n";
+        static const int kNumOps = 1000;
+        static const long int kNumKVs = 3000;
+        static const int kValueSize = 2048*128;
+
+        Random rnd(0);
+        std::vector<std::string> keys(kNumKVs);
+        for (int i = 0; i < kNumKVs; ++i) {
+                keys[i] = RandomNumberKey(&rnd);
+        }
+        //sort(keys.begin(), keys.end());
+        std::map<std::string, std::string> m;
+        std::cout << " ######### Begin Bench Insert ######## \n";
+
+        clock_t startTime,endTime;
+        startTime = clock();
+        leveldb::WriteBatch batch;
+        for (int i = 0; i < kNumOps; i++) {
+                std::string key = keys[i % kNumKVs];
+                std::string value = RandomString(&rnd, kValueSize);
+                batch.Clear();
+                batch.Put(key, value);
+                db_->Write(leveldb::WriteOptions(),&batch);
+        }
+        endTime = clock();
+        std::cout << "The Insert time is: " <<(endTime - startTime) << "\n";
+
+        std::cout << " @@@@@@@@@ PASS #########\n";
+        std::cout << " ######### Begin Sequential Get Test ######## \n";
+
+        startTime = clock();
+        for (int i = 0; i < kNumOps; i++) {
+                std::string key = keys[i % kNumKVs];
+                std::string res;
+                s = db_->Get(leveldb::ReadOptions(), key, &res);
+        }
+        endTime = clock();
+        std::cout << "The Get time is: " <<(endTime - startTime) << "\n";
+        std::cout << " @@@@@@@@@ PASS #########\n";
+
+        std::cout << " ######### Begin Sequential Iterator Test ######## \n";
+        startTime = clock();        
+        auto it = db_->NewIterator(leveldb::ReadOptions());
+        it->SeekToFirst();
+        while ( it->Valid()) {
+            auto res_key = it->key();
+            auto res_value = it->value();
+            it->Next();
+        }
+        endTime = clock();
+        std::cout << "The Iterator time is: " <<(endTime - startTime) << "\n";
+        std::cout << " @@@@@@@@@ PASS #########\n";
+        delete db_;
+        std::cout << " Delete Open Db \n";
+}
+
+
+
+
 
 int main(){
+  
+  Bench();
+  
+  /* 
+  leveldb::DB* db_ = nullptr;
+  // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
+  leveldb::Status s = leveldb::silkstore::PmemKVLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
+  assert(s.ok()==true);
 
-  InsertAndGet();
+  EmptyIter(db_);
+  sleep(12);
+  for (int i = 0; i < kNumKVs; ++i) {
+        keys[i] = RandomNumberKey(&rnd);
+  }
+  InsertAndGet(db_);
+  Get(db_);
+  Iter(db_);
+  delete db_;
+  std::cout << " Delete Open Db \n"; */
 }

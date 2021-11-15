@@ -34,7 +34,7 @@ public:
   // Caller should delete *dbptr when it is no longer needed.
   static Status OpenLeafIndex(const Options& options,
                      const std::string& name,
-                     PmemKVLeafIndex** dbptr);
+                     DB** dbptr);
   PmemKVLeafIndex(const Options& options, const std::string& dbname);
   PmemKVLeafIndex() = default;
 
@@ -133,7 +133,7 @@ private:
   pmem::kv::db *kv;
   //pmem::kv::db::read_iterator kv;
   //kvdk::Engine *engine;
-  port::Mutex mutex_;
+  std::mutex mutex_;
   
 };
 
