@@ -55,7 +55,7 @@ std::string RandomString(Random* rnd, int len) {
 
 void SequentialWrite(){
   
-        leveldb::silkstore::NVMLeafIndex* db_ = nullptr;
+        leveldb::DB* db_ = nullptr;
        // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
         leveldb::Status s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
         assert(s.ok()==true);
@@ -175,7 +175,7 @@ void SequentialWrite(){
 
 
 void EmptyIter(){
-        leveldb::silkstore::NVMLeafIndex* db_ = nullptr;
+        leveldb::DB* db_ = nullptr;
 
        // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
         leveldb::Status s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
@@ -199,7 +199,7 @@ void EmptyIter(){
 
 void  WriteBatchTest(){
 
-        leveldb::silkstore::NVMLeafIndex* db_ = nullptr;
+        leveldb::DB* db_ = nullptr;
        // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
         leveldb::Status s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
         assert(s.ok()==true);
@@ -296,14 +296,14 @@ void  WriteBatchTest(){
 
 void Bench(){
   
-        leveldb::silkstore::NVMLeafIndex* db_ = nullptr;
+        leveldb::DB* db_ = nullptr;
        // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
         leveldb::Status s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
         assert(s.ok()==true);
-        std::cout << " ######### Bench Test ######## \n";
-        static const int kNumOps = 300000;
-        static const long int kNumKVs = 500000;
-        static const int kValueSize = 100*100;
+           std::cout << " ######### Bench Test ######## \n";
+        static const int kNumOps = 1000;
+        static const long int kNumKVs = 3000;
+        static const int kValueSize = 2048*128;
 
         Random rnd(0);
         std::vector<std::string> keys(kNumKVs);
@@ -312,21 +312,23 @@ void Bench(){
         }
         //sort(keys.begin(), keys.end());
         std::map<std::string, std::string> m;
-        std::cout << " ######### Begin Bench Insert Test ######## \n";
+        std::cout << " ######### Begin Bench Insert ######## \n";
+
         clock_t startTime,endTime;
         startTime = clock();
-
+        leveldb::WriteBatch batch;
         for (int i = 0; i < kNumOps; i++) {
                 std::string key = keys[i % kNumKVs];
                 std::string value = RandomString(&rnd, kValueSize);
-                db_->Put(leveldb::WriteOptions(),key, value);
-               
+                batch.Clear();
+                batch.Put(key, value);
+                db_->Write(leveldb::WriteOptions(),&batch);
         }
         endTime = clock();
         std::cout << "The Insert time is: " <<(endTime - startTime) << "\n";
 
         std::cout << " @@@@@@@@@ PASS #########\n";
-        std::cout << " ######### Begin Bench Get Test ######## \n";
+        std::cout << " ######### Begin Sequential Get Test ######## \n";
 
         startTime = clock();
         for (int i = 0; i < kNumOps; i++) {
@@ -335,22 +337,23 @@ void Bench(){
                 s = db_->Get(leveldb::ReadOptions(), key, &res);
         }
         endTime = clock();
-        std::cout << "The Get time is: " <<(endTime - startTime) << "\n";
+        std::cout <<"kNumOps: " << kNumOps << " The Get time is: " <<(endTime - startTime) << "\n";
         std::cout << " @@@@@@@@@ PASS #########\n";
 
-        std::cout << " ######### Begin Bench Iterator Test ######## \n";
+        std::cout << " ######### Begin Sequential Iterator Test ######## \n";
         startTime = clock();        
         auto it = db_->NewIterator(leveldb::ReadOptions());
         it->SeekToFirst();
-        while (it->Valid()) {
+        int counter = 0;
+       // std::cout << "it->Valid() " << (it->Valid() == true )<< "\n";
+        while ( it->Valid()) {
+          //  std::cout << counter++;
             auto res_key = it->key();
-            auto res_value = it->value();
-            
+           // auto res_value = it->value();
             it->Next();
         }
         endTime = clock();
         std::cout << "The Iterator time is: " <<(endTime - startTime) << "\n";
- 
         std::cout << " @@@@@@@@@ PASS #########\n";
         delete db_;
         std::cout << " Delete Open Db \n";
@@ -361,7 +364,7 @@ void Bench(){
 
 void WriteBatchBench(){
   
-        leveldb::silkstore::NVMLeafIndex* db_ = nullptr;
+        leveldb::DB* db_ = nullptr;
        // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
         leveldb::Status s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
         assert(s.ok()==true);
@@ -422,12 +425,12 @@ void WriteBatchBench(){
         delete db_;
         std::cout << " Delete Open Db \n";
 }
-
+/* 
 
 void IterTest(){
 
 
-    leveldb::silkstore::NVMLeafIndex* db_ = nullptr;
+    leveldb::DB* db_ = nullptr;
     // leveldb::silkstore::NVMLeafIndex* db = new NVMLeafIndex(Options(), nullptr);
     leveldb::Status s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(leveldb::Options(), "", &db_);
     assert(s.ok()==true);
@@ -460,17 +463,6 @@ void IterTest(){
             m[key] = value;
 
           //  auto it = db_->NewIterator(leveldb::ReadOptions());
-            /* while (it->Valid()){
-                    leveldb::Slice reskey = it->key().ToString();
-                    std::cout<< "it->key() " << reskey.ToString() << " "; 
-                    std::cout<< " it address " <<  (uint64_t) reskey.data()<< " \n";
-                    
-                    //  std::cout<< " it->value: " << it->value().ToString() << "\n";
-                    it->Next();
-            }
-
-            return ; */
-   
                 //std::cout << "insert key value: " << key << "->" << value << "\n";
             auto it = db_->NewIterator();
             it->SeekToFirst();
@@ -511,7 +503,7 @@ void IterTest(){
 
 
 }
-
+ */
 
 int main(int argc, char const *argv[]){
     
@@ -519,10 +511,10 @@ int main(int argc, char const *argv[]){
     //EmptyIter();
 
     //WriteBatchTest();
-    SequentialWrite();
+    //SequentialWrite();
 
    // WriteBatchBench();
-   // Bench();
+    Bench();
     return 0;
 }
 

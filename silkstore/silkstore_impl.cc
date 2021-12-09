@@ -20,6 +20,7 @@
 #include "silkstore/util.h"
 #include "util/histogram.h"
 #include"nvm/pmemkv_leaf_index.h"
+#include"nvm/nvm_leaf_index.h"
 #include <cmath>
 int runs_searched = 0;
 namespace leveldb {
@@ -148,7 +149,7 @@ SilkStore::~SilkStore() {
 Status SilkStore::OpenIndex(const Options &index_options) {
    assert(leaf_index_ == nullptr);
     Status s;
-    s = leveldb::silkstore::PmemKVLeafIndex::OpenLeafIndex(
+    s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(
             index_options,  dbname_ + "/leaf_index", &leaf_index_);
     /* if (index_options.leaf_index_path == nullptr){
         s = DB::Open(index_options,  dbname_ + "/leaf_index", &leaf_index_);
@@ -632,7 +633,7 @@ Status SilkStore::MakeRoomForWrite(bool force) {
             logfile_ = lfile;
             logfile_number_ = new_log_number;
             log_ = new log::Writer(lfile);
-
+           // std::cout<< " imm_.push_back "  << size_t(mem_) << "\n";
             imm_.push_back(mem_);
             has_imm_.Release_Store(imm_.back());            
             
@@ -950,11 +951,13 @@ Status SilkStore::Get(const ReadOptions &options,
         } else if (!imm_.empty()) {
             //这里必须是从后往前找，因为最新的imm都放到了后面
            // for(auto it = imm_.rbegin() ;it != imm_.rend(); it++){
-            for(int i = ref_table.size() - 1; i >= 0; i++){
-                 if (ref_table[i]->Get(lkey, value, &s)){
+            for(int i = ref_table.size() - 1; i >= 0; i--){
+              //  std::cout<< "### seek NvmemTable ### " <<  size_t(&ref_table[i]) << "\n";
+                 if (ref_table[i] != nullptr && ref_table[i]->Get(lkey, value, &s)){
                      find = true;
                      break;
                  }
+              //  std::cout<< "### success ### \n";
             }            
         }
         if (!find) {
@@ -1557,6 +1560,12 @@ Status SilkStore::MakeRoomInLeafLayer(bool force) {
 
             DeferCode c([it]() { delete it; });
 
+            if (it == nullptr){
+                std::cout << "it == nullptr\n";
+                //return ;
+            }
+
+
             it->SeekToFirst();
 
             size_t bytes_current_leaf = 0;
@@ -2021,8 +2030,10 @@ void SilkStore::BackgroundCompaction() {
         while (!imm_.empty()){
             /*Need to check the free order */
             auto imm = imm_.front();
+            //std::cout<< " imm_.pop_front "  << size_t(imm) << "\n";            
             imm_.pop_front();
             imm->Unref();
+           // imm = nullptr;
           //  nvm_manager_->free();        
             if (imm == flag){
                 break;    
@@ -2032,12 +2043,14 @@ void SilkStore::BackgroundCompaction() {
        compaction_table_ = nullptr;
       // std::cout<<"delete NvmInfo:" << nvm_manager_->getNvmInfo() << " \n";
 
-        has_imm_.Release_Store(nullptr);
+       has_imm_.Release_Store(nullptr);
     }
 }
 
 Status DestroyDB(const std::string &dbname, const Options &options) {
     //Status result = leveldb::DestroyDB("/mnt/myPMem/leaf_index", options);
+    system(std::string{"rm -rf   /mnt/NVMSilkstore/leafindex/ \n"}.c_str());
+    
     Status result;
     if (options.leaf_index_path == nullptr){
         result = leveldb::DestroyDB(dbname + "/leaf_index", options);

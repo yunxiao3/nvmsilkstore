@@ -16,6 +16,9 @@ class NVMLeafIndexIterator: public Iterator {
 	  iter_->Seek(k.ToString());
   }
   virtual void SeekToFirst() {
+	  if (iter_ == nullptr){
+		  std::__throw_runtime_error("iter_ == nullptr\n");
+	  }
   	  iter_->SeekToFirst();
   }
   virtual void SeekToLast() {
@@ -29,10 +32,17 @@ class NVMLeafIndexIterator: public Iterator {
   }
   
   virtual Slice key() const {
-	std::cout<< "key: " <<  iter_->Key() << " \n";
+	//std::cout<< "key: " <<  iter_->Key() << " ";
+	store.push_back(iter_->Key());
+	return store.back();
+
 	return Slice(iter_->Key() );
   }
   virtual Slice value() const {
+	//std::cout<< "Value: " <<  iter_->Value().size() << " ";
+	store.push_back(iter_->Value());
+	return store.back();
+
     return iter_->Value();
 
   }
@@ -40,6 +50,8 @@ class NVMLeafIndexIterator: public Iterator {
   virtual Status status() const { return Status::OK(); }
 
  private:
+  mutable std::vector<std::string> store;
+
   std::shared_ptr<kvdk::Iterator>  iter_;
   // No copying allowed
   NVMLeafIndexIterator(const NVMLeafIndexIterator&);
@@ -50,8 +62,12 @@ class NVMLeafIndexIterator: public Iterator {
   //std::__throw_runtime_error(" NVMLeafIndex::NewIterator(const ReadOptions& options) not support\n");
   auto it =  kv->NewSortedIterator("leafindex");
   if (it == nullptr){
+
+	  std::cout<< "return NewEmptyIterator \n";
 	  return NewEmptyIterator();
   }
+  //std::cout<< "return NVMLeafIndexIterator \n";
+
   return new NVMLeafIndexIterator(it);
 } 
 
@@ -96,15 +112,20 @@ std::shared_ptr<kvdk::Iterator> NVMLeafIndex::NewIterator(){
 
 NVMLeafIndex::NVMLeafIndex(const Options& options, const std::string& dbname){
 	kvdk::Configs cfg;
-	cfg.pmem_segment_blocks = ( 1024UL* 1024UL * 4 );
-	cfg.hash_bucket_num = (1ull << 15);
-
-	cfg.pmem_file_size = 1280UL * 1024UL * 1024UL * 32;
+	//cfg.pmem_segment_blocks =  (1024ull << 16);
+	//cfg.hash_bucket_num = (1ull << 15);
+	cfg.pmem_segment_blocks = (1024ull * 1024ull * 4);
+    cfg.hash_bucket_num = (1ull << 15);
+	cfg.pmem_file_size = 1280UL * 1024UL * 1024UL * 16;
 	std::string engine_path = "/mnt/NVMSilkstore/leafindex";
 
 	printf("###### Need to set pmem_segment_blocks  hash_bucket_num  pmem_file_size #####\n");	
 
-	kvdk::Engine::Open(engine_path, &kv, cfg, stdout);
+	kvdk::Status s = kvdk::Engine::Open(engine_path, &kv, cfg, stdout);
+	if (s != kvdk::Status::Ok){
+		std::cout<<s <<"\n"; 
+		std::__throw_runtime_error("kvdk::Engine::Open Err\n");
+	}
 	printf("############# Successfully opened a KVDK instance. ##############\n"); 
   	/* kvdk::Configs cfg;
     cfg.pmem_segment_blocks = (1ull << 8);
@@ -131,7 +152,7 @@ NVMLeafIndex::NVMLeafIndex(const Options& options, const std::string& dbname){
 
 Status NVMLeafIndex::OpenLeafIndex(const Options& options,
                      const std::string& name,
-                     NVMLeafIndex** dbptr){
+                     DB** dbptr){
 	*dbptr = new NVMLeafIndex(options, name);
 	return Status::OK();
 }
@@ -210,6 +231,7 @@ Status NVMLeafIndex::Get(const ReadOptions &options,
 	kvdk::Status s;
 	mutex_.Lock();				 										
 	s = kv->SGet("leafindex",key.ToString(), value);
+	//std::cout<< key.size() <<" " << value->size() <<"\n";
 	mutex_.Unlock();				 	
 
 	if (s == kvdk::Status::Ok){
@@ -225,7 +247,7 @@ Status NVMLeafIndex::Get(const ReadOptions &options,
 } */
 
 bool NVMLeafIndex::GetProperty(const Slice& property, std::string* value){
-	throw std::runtime_error("NVMLeafIndex::GetProperty not supported");
+	//throw std::runtime_error("NVMLeafIndex::GetProperty not supported");
 }
 void NVMLeafIndex::GetApproximateSizes(const Range* range, int n, uint64_t* sizes) {
 	throw std::runtime_error("NVMLeafIndex::GetApproximateSizes not supported");

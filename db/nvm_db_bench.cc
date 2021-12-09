@@ -46,9 +46,9 @@
 static const char* FLAGS_benchmarks =
     //"fillrandom,"
     "fillseq,"
-    "fillsync,"
+   /*  "fillsync,"
     "fillrandom,"
-    "overwrite,"
+    "overwrite," */
     "readrandom,"
     "readrandom,"  // Extra run to allow previous compactions to quiesce
     "readseq,"
@@ -1429,6 +1429,7 @@ int main(int argc, char** argv) {
       //leveldb::g_env->GetTestDirectory(&default_db_path);
       //default_db_path = "/mnt/900p/dbbench";
       default_db_path = "/mnt/toshiba/nvmbench";
+      std::cout << "default_db_path: " << default_db_path << "\n"; 
 //      if (FLAGS_db_type == std::string("silkstore"))
 //          default_db_path += "/silkstore";
 //      else

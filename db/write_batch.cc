@@ -196,14 +196,22 @@ class KVDKInserter : public WriteBatch::Handler {
 
   virtual void Put(const Slice& key, const Slice& value) {
    // printf("PmemkvInserter: Put set a default prefix leafindex \n");
-   std::cout<<"KVDKInserter: "<<  key.ToString()<< " value.ToString size: "<<  value.ToString().size() <<  " \n";
-    kv_->SSet("leafindex",key.ToString(), value.ToString());
+   //std::cout<<"KVDKInserter: "<<  key.ToString()<< " value.ToString size: "<<  value.ToString().size() <<  " \n";
+    kvdk::Status s = kv_->SSet("leafindex",key.ToString(), value.ToString());
+    if (s != kvdk::Status::Ok){
+      std::cout << s << "\n";
+      std::__throw_runtime_error("KVDKInserter err");
+    }
     sequence_++;
   }
   virtual void Delete(const Slice& key) {
     //printf("PmemkvInserter: Delete \n"); 
-    std::cout<<"KVDKDelete: "<<  key.ToString() <<  " \n";
-    kv_->SDelete("leafindex",key.ToString());
+   // std::cout<<"KVDKDelete: "<<  key.ToString() <<  " \n";
+    kvdk::Status s = kv_->SDelete("leafindex",key.ToString());
+    if (s != kvdk::Status::Ok){
+      std::cout << s << "\n";
+      std::__throw_runtime_error("KVDKInserter err");
+    }
     sequence_++;
   }
 };

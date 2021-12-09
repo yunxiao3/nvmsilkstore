@@ -224,8 +224,9 @@ void NvmemTable::Add(SequenceNumber s, ValueType type,
 
 
 bool NvmemTable::Get(const LookupKey& key, std::string* value, Status* s) {
-  if (dynamic_filter && !dynamic_filter->KeyMayMatch(key.user_key()))
-    return false;
+
+  if (dynamic_filter != nullptr && !dynamic_filter->KeyMayMatch(key.user_key()))
+        return false;
 
   ++searches_;
   Slice memkey = key.user_key();

@@ -495,8 +495,12 @@ Iterator *LeafStore::NewDBIterForLeaf(const ReadOptions &options, const LeafInde
                                       SequenceNumber seq, uint32_t start_minirun_no,
                                       uint32_t end_minirun_no) {
     Iterator *internal_iter = NewIteratorForLeaf(options, leaf_index_entry, s, start_minirun_no, end_minirun_no);
-    if (!s.ok())
+    if (!s.ok()){
+
+        std::cout<< s.ToString() << "\n";
         return nullptr;
+
+    }
     return leveldb::silkstore::NewDBIterator(user_comparator, internal_iter, seq);
 }
 
