@@ -135,11 +135,8 @@ public:
   virtual void CompactRange(const Slice* begin, const Slice* end) ;
 private:
 
-
   kvdk::Engine* kv;
-  //kvdk::Engine *engine;
   port::Mutex mutex_;
-  
 };
 
 							   

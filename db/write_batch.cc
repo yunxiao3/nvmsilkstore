@@ -210,7 +210,7 @@ class KVDKInserter : public WriteBatch::Handler {
     kvdk::Status s = kv_->SDelete("leafindex",key.ToString());
     if (s != kvdk::Status::Ok){
       std::cout << s << "\n";
-      std::__throw_runtime_error("KVDKInserter err");
+      std::__throw_runtime_error("KVDK Delete err");
     }
     sequence_++;
   }

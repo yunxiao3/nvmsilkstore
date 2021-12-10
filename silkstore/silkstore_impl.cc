@@ -285,7 +285,6 @@ Status SilkStore::RecoverLogFile(uint64_t log_number, SequenceNumber *max_sequen
 
 Status SilkStore::RecoverMemtable(uint64_t log_number, SequenceNumber *max_sequence){
    // std::cout << "RecoverMemtable\n";
-
     struct LogReporter : public log::Reader::Reporter {
         Env *env;
         Logger *info_log;
@@ -340,8 +339,6 @@ Status SilkStore::RecoverMemtable(uint64_t log_number, SequenceNumber *max_seque
     }
     //std::cout<< "log record: " << record.ToString() << "\n";
     
-
-
     // split record into string numbers
     std::string rec = record.ToString();
     std::string delimiter = ",";
@@ -2048,14 +2045,16 @@ void SilkStore::BackgroundCompaction() {
 }
 
 Status DestroyDB(const std::string &dbname, const Options &options) {
-    //Status result = leveldb::DestroyDB("/mnt/myPMem/leaf_index", options);
-    system(std::string{"rm -rf   /mnt/NVMSilkstore/leafindex/ \n"}.c_str());
+  
     
     Status result;
     if (options.leaf_index_path == nullptr){
-        result = leveldb::DestroyDB(dbname + "/leaf_index", options);
+        system(std::string{"rm -rf   /mnt/NVMSilkstore/* \n"}.c_str());
+        //result = leveldb::DestroyDB(dbname + "/leaf_index", options);
     }else{
-        result = leveldb::DestroyDB(std::string(options.leaf_index_path), options);
+        std::string cmd = "rm -rf" +   std::string(options.leaf_index_path) +  "\n";
+        system(cmd.c_str());
+        //result = leveldb::DestroyDB(std::string(options.leaf_index_path), options);
     }
 
    // Status result = leveldb::DestroyDB(dbname + "/leaf_index", options);

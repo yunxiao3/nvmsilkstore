@@ -150,6 +150,16 @@ Iterator* PmemKVLeafIndex::NewIterator(const ReadOptions& options){
 PmemKVLeafIndex::PmemKVLeafIndex(const Options& options, const std::string& dbname){
   	pmem::kv::config cfg;
 
+	std::string engine_path;
+	if (options.leaf_index_path == nullptr){
+		printf("############# Using Default /mnt/NVMSilkstore/leafindex ##############\n");
+		engine_path = "/mnt/NVMSilkstore/leafindex";
+	}else{
+		engine_path = options.leaf_index_path;
+		std::cout << "engine_path: " << engine_path << "\n"; 	
+	}
+
+
 	pmem::kv::status s = cfg.put_path("/mnt/NVMSilkstore/pmemkv");
 	s = cfg.put_size(1024ul*1024*1024*10);
 	assert(s == pmem::kv::status::OK);
@@ -267,6 +277,7 @@ Status PmemKVLeafIndex::Get(const ReadOptions &options,
 
 bool PmemKVLeafIndex::GetProperty(const Slice& property, std::string* value){
 	//throw std::runtime_error("PmemKVLeafIndex::GetProperty not supported");
+	return true;
 }
 void PmemKVLeafIndex::GetApproximateSizes(const Range* range, int n, uint64_t* sizes) {
 	throw std::runtime_error("PmemKVLeafIndex::GetApproximateSizes not supported");
