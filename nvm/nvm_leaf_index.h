@@ -64,6 +64,9 @@ public:
   // Note: consider setting options.sync = true.
   virtual Status Write(const WriteOptions& options, WriteBatch* updates) ;
   
+  Status NvmWrite(const WriteOptions& options, NvmWriteBatch* updates){
+    std::__throw_runtime_error("");
+  };
 
   // If the database contains an entry for "key" store the
   // corresponding value in *value and return OK.

@@ -36,13 +36,20 @@ class Slice;
 class LEVELDB_EXPORT NvmWriteBatch {
  public:
   NvmWriteBatch();
-
+  NvmWriteBatch(SequenceNumber seq);
   // Intentionally copyable.
   NvmWriteBatch(const NvmWriteBatch&) = default;
   NvmWriteBatch& operator =(const NvmWriteBatch&) = default;
 
   ~NvmWriteBatch();
 
+  int Counter(){
+    return counter_;
+  }
+
+  void SetSequence(SequenceNumber seq) {
+    seq_ = seq;
+  }
 
   // Store the mapping "key->value" in the database.
   void Put(const Slice& key, const Slice& value);

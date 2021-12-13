@@ -128,7 +128,7 @@ IndexIterator NvmemTable::NewIndexIterator() {
 Status NvmemTable::AddCounter(size_t added){
   counters_ += added;
   nvmem->UpdateCounter(counters_);
- // std::cout << "counters: " << counters_ <<"\n";
+  //std::cout << "counters: " << counters_ <<"\n";
 
   return Status::OK();
 }
@@ -137,6 +137,28 @@ Status NvmemTable::AddCounter(size_t added){
 size_t NvmemTable::GetCounter(){
   return nvmem->GetCounter();
 }
+
+
+
+
+Status NvmemTable::AddBatch(const NvmWriteBatch* batch){
+  int64_t offset = nvmem->Insert(batch->buf, batch->offset_); 
+  int nums = batch->offset_arr_.size();
+//  std::cout<< "batch size :" << batch->offset_arr_.size()<< "\n";
+  for(int i = 0; i < nums; i++){
+      uint64_t address = offset + batch->offset_arr_[i].second;
+      index_.insert(batch->offset_arr_[i].first, address);
+   //   std::cout<< "key :" << batch->offset_arr_[i].first<< "\n";  
+      if (dynamic_filter)
+        dynamic_filter->Add(batch->offset_arr_[i].first);
+  }
+  AddCounter(nums);
+  num_entries_ += nums;
+  memory_usage_ += batch->offset_;
+  return Status::OK();
+}
+
+
 
 bool NvmemTable::AddIndex(Slice key ,uint64_t val){
     index_.insert(key.ToString(),val);

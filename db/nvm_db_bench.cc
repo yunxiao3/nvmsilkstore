@@ -52,7 +52,7 @@ static const char* FLAGS_benchmarks =
     "readrandom,"
     "readrandom,"  // Extra run to allow previous compactions to quiesce
     "readseq,"
-    "readreverse,"
+   // "readreverse,"
    /*
    "compact,"
     "readrandom,"

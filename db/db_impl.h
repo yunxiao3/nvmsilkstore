@@ -35,6 +35,9 @@ class DBImpl : public DB {
   virtual Status Get(const ReadOptions& options,
                      const Slice& key,
                      std::string* value);
+  Status NvmWrite(const WriteOptions& options, NvmWriteBatch* updates){
+    return Status::NotSupported("Err");
+  }                   
   virtual Iterator* NewIterator(const ReadOptions&);
   virtual const Snapshot* GetSnapshot();
   virtual void ReleaseSnapshot(const Snapshot* snapshot);

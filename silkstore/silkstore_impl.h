@@ -45,7 +45,7 @@ public:
     virtual Status Delete(const WriteOptions &, const Slice &key);
 
     virtual Status Write(const WriteOptions &options, WriteBatch *updates);
-   // virtual Status NvmWrite(const WriteOptions &options, NvmWriteBatch *updates);
+    virtual Status NvmWrite(const WriteOptions &options, NvmWriteBatch *updates);
 
     virtual Status Get(const ReadOptions &options,
                        const Slice &key,
@@ -219,7 +219,7 @@ private:
 
     Status MakeRoomForWrite(bool force /* compact even if there is room? */)
     EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-    //Status NvmMakeRoomForWrite(bool force /* compact even if there is room? */)
+    Status NvmMakeRoomForWrite(bool force /* compact even if there is room? */)
     EXCLUSIVE_LOCKS_REQUIRED(mutex_);
     // Recover the descriptor from persistent storage.  May do a significant
     // amount of work to recover recently logged updates.  Any changes to

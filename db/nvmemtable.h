@@ -84,7 +84,7 @@ class NvmemTable {
   void Add(SequenceNumber seq, ValueType type,
            const Slice& key,
            const Slice& value);
-  //Status AddBatch(const NvmWriteBatch* b);
+  Status AddBatch(const NvmWriteBatch* b);
   
   Status Recovery(SequenceNumber& max_sequence);
   Status AddCounter(size_t added);
