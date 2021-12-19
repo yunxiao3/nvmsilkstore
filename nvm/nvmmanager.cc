@@ -42,15 +42,17 @@ Nvmem* NvmManager::reallocate(size_t offset, size_t cap){
 
 Nvmem* NvmManager::allocate(size_t size){
     std::lock_guard<std::mutex> lk(mtx);
+
     if (index_ + size >= cap_){
         index_ = logCap_;
-        if ( index_ + size > memUsage.front().first){
-            fprintf(stderr, "NvmManager is out can't allocate nvmem \n");
-            assert(false);
-        }
         fprintf(stdout, "########## $$$$$$$$$$$$$$$$  ###########\n");
         fprintf(stdout, "########## NvmManager Reset  ###########\n");
         fprintf(stdout, "########## $$$$$$$$$$$$$$$$  ###########\n");
+    }
+    if ( memUsage.size() != 0 && index_ <  memUsage.front().first 
+                && index_ + size > memUsage.front().first){
+        fprintf(stderr, "NvmManager is out can't allocate nvmem \n");
+        assert(false);
     }
     Nvmem* nvm = new Nvmem(data_ + index_, size, this);
     memUsage.emplace_back(index_,size);

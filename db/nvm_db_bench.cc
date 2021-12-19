@@ -46,6 +46,8 @@
 static const char* FLAGS_benchmarks =
     //"fillrandom,"
     "fillseq,"
+    "overwrite," 
+    "readrandom,"
     "fillsync,"
     "fillrandom,"
     "overwrite," 
@@ -1028,10 +1030,10 @@ class Benchmark {
     std::string msg;
     //db_->GetProperty(std::string(FLAGS_db_type) + ".stats", &msg);
     //thread->stats.AddMessage(msg);
-
+    printf("###### NvmWriteBatch ######\n");
     RandomGenerator gen;
-    // NvmWriteBatch batch;
-    WriteBatch batch;
+    NvmWriteBatch batch;
+    //WriteBatch batch;
     Status s;
     int64_t bytes = 0;
     for (int i = 0; i < num_; i += entries_per_batch_) {
@@ -1044,8 +1046,8 @@ class Benchmark {
         bytes += value_size_ + strlen(key);
         thread->stats.FinishedSingleOp();
       }
-//      s = db_->NvmWrite(write_options_, &batch);
-      s = db_->Write(write_options_, &batch);
+      s = db_->NvmWrite(write_options_, &batch);
+//      s = db_->Write(write_options_, &batch);
       if (!s.ok()) {
         fprintf(stderr, "put error: %s\n", s.ToString().c_str());
         exit(1);

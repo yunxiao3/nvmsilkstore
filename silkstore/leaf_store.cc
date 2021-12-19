@@ -377,8 +377,8 @@ Status LeafStore::Get(const ReadOptions &options, const LookupKey &key, std::str
 
     Slice index_data = it->value();
 
-    //std::cout<<"key: "<< it->key().ToString()  << " index_data's size: " 
-    //            << index_data.size() << "\n";
+   /*  std::cout<<"leafstore key: "<< it->key().ToString()  << " index_data's size: " 
+                << index_data.size() << "\n"; */
     Status s;
     Status key_status = Status::NotFound("");
     LeafIndexEntry index_entry(index_data);

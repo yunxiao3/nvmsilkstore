@@ -430,7 +430,7 @@ void Recovery(){
 }
 int main(int argc, char** argv){
       //deleteUpdate();
-      CompareMemAndImm();
+     // CompareMemAndImm();
      // IteratorTest();
 
       WriteData();

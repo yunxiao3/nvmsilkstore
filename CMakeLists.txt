@@ -197,11 +197,16 @@ target_sources(leveldb
     "${PROJECT_SOURCE_DIR}/nvm/nvm_leaf_index.h"
     "${PROJECT_SOURCE_DIR}/nvm/nvm_leaf_index.cc"
 
+    "${PROJECT_SOURCE_DIR}/nvm/leafindex/leafindex.h"
+    "${PROJECT_SOURCE_DIR}/nvm/leafindex/leafindex.cc"
+
     
     "${PROJECT_SOURCE_DIR}/nvm/pmemkv_leaf_index.h"
     "${PROJECT_SOURCE_DIR}/nvm/pmemkv_leaf_index.cc"
 
-    
+      
+    "${PROJECT_SOURCE_DIR}/nvm/nvmem_leaf_index.h"
+    "${PROJECT_SOURCE_DIR}/nvm/nvmem_leaf_index.cc"
 
 
 
@@ -345,7 +350,9 @@ if(LEVELDB_BUILD_TESTS)
   leveldb_test("${PROJECT_SOURCE_DIR}/test/seqwrite_test.cc")  
   leveldb_test("${PROJECT_SOURCE_DIR}/nvm/nvm_leaf_index_test.cc")
   leveldb_test("${PROJECT_SOURCE_DIR}/nvm/pmemkv_leaf_index_test.cc")
+  leveldb_test("${PROJECT_SOURCE_DIR}/nvm/nvmem_leaf_index_test.cc")
 
+  
   #leveldb_test("${PROJECT_SOURCE_DIR}/test/seq_rand_add-get_test.cc")
 
 

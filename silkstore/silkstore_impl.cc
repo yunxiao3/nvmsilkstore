@@ -21,6 +21,7 @@
 #include"nvm/pmemkv_leaf_index.h"
 #include"nvm/nvm_leaf_index.h"
 #include <cmath>
+#include"nvm/nvmem_leaf_index.h"
 int runs_searched = 0;
 namespace leveldb {
 
@@ -101,6 +102,7 @@ SilkStore::SilkStore(const Options &raw_options, const std::string &dbname)
           background_compaction_scheduled_(false),
           leaf_optimization_func_([]() {}),
           manual_compaction_(nullptr) {
+    std::cout<< "  raw_options.nvm_size  " <<  raw_options.nvm_size / (1024*1024 * 1024) << " Gb\n";
     nvm_manager_ = new NvmManager(raw_options.nvm_file, raw_options.nvm_size);           
     has_imm_.Release_Store(nullptr);
 }
@@ -145,9 +147,9 @@ SilkStore::~SilkStore() {
 Status SilkStore::OpenIndex(const Options &index_options) {
    assert(leaf_index_ == nullptr);
     Status s;
-    s = DB::Open(index_options,  dbname_ + "/leaf_index", &leaf_index_);
-    // s = leveldb::silkstore::NVMLeafIndex::OpenLeafIndex(
-    //        index_options,  dbname_ + "/leaf_index", &leaf_index_);
+    //s = DB::Open(index_options,  dbname_ + "/leaf_index", &leaf_index_);
+     s = leveldb::silkstore::NvmemLeafIndex::OpenLeafIndex(
+            index_options,  dbname_ + "/leaf_index", &leaf_index_);
     /* if (index_options.leaf_index_path == nullptr){
         s = DB::Open(index_options,  dbname_ + "/leaf_index", &leaf_index_);
         std::cout << "Open index: "<< dbname_ + "/leaf_index\n";
@@ -494,9 +496,9 @@ Status SilkStore::TEST_CompactMemTable() {
 // Convenience methods
 Status SilkStore::Put(const WriteOptions &option, const Slice &key, const Slice &value) {
     
-    NvmWriteBatch nvm_batch(max_sequence_++);
+  /*   NvmWriteBatch nvm_batch(max_sequence_++);
     nvm_batch.Put(key, value);
-    return NvmWrite(option, &nvm_batch);
+    return NvmWrite(option, &nvm_batch); */
     
     WriteBatch batch;
     batch.Put(key, value);
@@ -1158,6 +1160,8 @@ Status SilkStore::Get(const ReadOptions &options,
         bool find = false;
         if (mem->Get(lkey, value, &s)) {
             // Done
+            //if (key == "0000000001840615")
+            //    std::cout<< key.ToString() << "find in mem \n";
            find = true;
         } else if (!imm_.empty()) {
             //这里必须是从后往前找，因为最新的imm都放到了后面
@@ -1165,6 +1169,8 @@ Status SilkStore::Get(const ReadOptions &options,
             for(int i = ref_table.size() - 1; i >= 0; i--){
               //  std::cout<< "### seek NvmemTable ### " <<  size_t(&ref_table[i]) << "\n";
                  if (ref_table[i] != nullptr && ref_table[i]->Get(lkey, value, &s)){
+                    //if (key == "0000000001840615")
+                     //   std::cout<< key.ToString() << " find in imm \n";
                      find = true;
                      break;
                  }
@@ -1172,7 +1178,8 @@ Status SilkStore::Get(const ReadOptions &options,
             }            
         }
         if (!find) {
-           // std::cout<< "Get From Leaf_store: \n";
+            //if (key == "0000000001840615")
+            //std::cout<< key.ToString() << " Get From Leaf_store: \n";
             s = leaf_store_->Get(options, lkey, value, stat_store_);
         }
         mutex_.Lock();

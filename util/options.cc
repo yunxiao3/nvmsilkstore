@@ -12,7 +12,7 @@
 constexpr size_t kSegmentFileSizeThreshold = 64 * 1024 * 1024;
 constexpr size_t kLeafDataSizeThreshold = 4 * 1024 * 1024;
 constexpr size_t kStorageBlocKSize = 4096;
-constexpr size_t kLeafMaxRunNum = 7;
+constexpr size_t kLeafMaxRunNum = 1;
 namespace leveldb {
 Options::Options()
     : comparator(BytewiseComparator()),
@@ -43,7 +43,7 @@ Options::Options()
       memtable_dynamic_filter_fp_rate(0.1),
       nvm_file("/mnt/myPMem/pmem.002"),
       leaf_index_path(nullptr),
-      nvm_size(1024 * 1024 * 1024),
+      nvm_size(1024ul * 1024ul * 1024ul * 50ul),
       max_imm_num(10),
       update_in_place(false){}
 }  // namespace leveldb

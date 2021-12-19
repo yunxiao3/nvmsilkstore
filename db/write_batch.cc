@@ -153,6 +153,23 @@ class NvmemTableInserter : public WriteBatch::Handler {
 
 
 
+class LeafIndexInserter : public WriteBatch::Handler {
+ public:
+  SequenceNumber sequence_;
+  LeafIndex* mem_;
+
+  virtual void Put(const Slice& key, const Slice& value) {
+    mem_->Add(sequence_, kTypeValue, key, value);
+    sequence_++;
+  }
+  virtual void Delete(const Slice& key) {
+    mem_->Add(sequence_, kTypeDeletion, key, Slice());
+    sequence_++;
+  }
+};
+
+
+
 class PmemkvInserter : public WriteBatch::Handler {
  public:
   SequenceNumber sequence_;
@@ -232,6 +249,16 @@ Status WriteBatchInternal::InsertInto(const WriteBatch* b,
 Status WriteBatchInternal::InsertInto(const WriteBatch* b,
                                       NvmemTable* memtable) {
   NvmemTableInserter inserter;
+  inserter.sequence_ = WriteBatchInternal::Sequence(b);
+  inserter.mem_ = memtable;
+  return b->Iterate(&inserter);
+}
+
+
+
+Status WriteBatchInternal::InsertInto(const WriteBatch* b,
+                                      LeafIndex* memtable) {
+  LeafIndexInserter inserter;
   inserter.sequence_ = WriteBatchInternal::Sequence(b);
   inserter.mem_ = memtable;
   return b->Iterate(&inserter);

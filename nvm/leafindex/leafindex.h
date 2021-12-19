@@ -8,8 +8,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-#ifndef STORAGE_LEVELDB_DB_NVMEMTABLE_H_
-#define STORAGE_LEVELDB_DB_NVMEMTABLE_H_
+#ifndef STORAGE_LEVELDB_DB_LEAFINDEX_H_
+#define STORAGE_LEVELDB_DB_LEAFINDEX_H_
 
 
 #include <string>
@@ -30,13 +30,13 @@ typedef leveldb::silkstore::BTree<std::string,uint64_t>::unsafe_iterator IndexIt
 class InternalKeyComparator;
 class MemTableIterator;
 
-class NvmemTable {
+class LeafIndex {
  public:
   // MemTables are reference counted.  The initial reference count
   // is zero and the caller must call Ref() at least once.
-  //explicit NvmemTable(const InternalKeyComparator& comparator, 
+  //explicit LeafIndex(const InternalKeyComparator& comparator, 
   //    DynamicFilter * dynamic_filter, silkstore::Nvmem *nvmem, silkstore::NvmLog *nvmlog);
-  explicit NvmemTable(const InternalKeyComparator& comparator, 
+  explicit LeafIndex(const InternalKeyComparator& comparator, 
       DynamicFilter* dynamic_filter, silkstore::Nvmem *nvmem);
 
 
@@ -44,7 +44,7 @@ class NvmemTable {
   void Ref() {
     //std::lock_guard<std::mutex> lk(mtx);     
     ++refs_;  
-    //printf(" ### nvmemtable::Ref() ### %d\n", refs_);
+    //printf(" ### LeafIndex::Ref() ### %d\n", refs_);
     return ;
   }
 
@@ -60,8 +60,8 @@ class NvmemTable {
     --refs_;
     assert(refs_ >= 0);
     if (refs_ <= 0) {
-      //printf(" %lx ### nvmemtable::Unref() ### %d\n",this , refs_);    
-      //printf("$$$ nvmemtable::delete() $$$\n");      
+      //printf(" %lx ### LeafIndex::Unref() ### %d\n",this , refs_);    
+      //printf("$$$ LeafIndex::delete() $$$\n");      
       delete this;
     }
     return ;
@@ -99,15 +99,15 @@ class NvmemTable {
   size_t NumEntries() const;
   size_t Searches() const;
 // private:
-  ~NvmemTable();  // Private since only Unref() should be used to delete it
+  ~LeafIndex();  // Private since only Unref() should be used to delete it
  private:
   struct KeyComparator {
     const InternalKeyComparator comparator;
     explicit KeyComparator(const InternalKeyComparator& c) : comparator(c) { }
     int operator()(const char* a, const char* b) const;
   };
-  friend class NvmemTableIterator;
-  friend class NvmemTableBackwardIterator;
+  friend class LeafIndexIterator;
+  friend class LeafIndexBackwardIterator;
 
 
  typedef leveldb::silkstore::BTree<std::string,uint64_t> Index;
@@ -126,8 +126,8 @@ class NvmemTable {
   size_t memory_usage_;
   DynamicFilter * dynamic_filter;
   // No copying allowed
-  NvmemTable(const NvmemTable&);
-  void operator=(const NvmemTable&);
+  LeafIndex(const LeafIndex&);
+  void operator=(const LeafIndex&);
 };
 
 }  // namespace leveldb

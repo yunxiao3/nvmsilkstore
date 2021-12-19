@@ -141,8 +141,7 @@ public:
         if (iter_->Valid()) {
             FindNextUserEntry(false, &saved_key_ /* temporary storage */);
         } else {
-            printf("SeekToFirst invalid\n ");
-            
+            //printf("SeekToFirst invalid\n ");
             valid_ = false;
         }
     }

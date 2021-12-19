@@ -13,7 +13,7 @@
 
 #include "kvdk/engine.hpp"
 #include "kvdk/namespace.hpp"
-
+#include "nvm/leafindex/leafindex.h"
 namespace leveldb {
 
 class MemTable;
@@ -53,6 +53,7 @@ class WriteBatchInternal {
   static Status InsertInto(const WriteBatch* batch, NvmemTable* memtable);
   static Status InsertInto(const WriteBatch* batch, kvdk::Engine* kv);
   static Status InsertInto(const WriteBatch* batch, pmem::kv::db* kv);
+  static Status InsertInto(const WriteBatch* batch, LeafIndex* kv);
 
   
 
